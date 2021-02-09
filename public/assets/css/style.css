@@ -4084,3 +4084,21 @@ a:active {
     font-weight: 400 !important;
     font-size: 40px !important;
 }
+/* /////////////////////     Pre Loader      /////////////////// */
+#cover {
+    position: fixed;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    top: 0;
+    left: 0;
+    background: #fff;
+    z-index: 9999;
+    text-align: center;
+    padding-top: 250px;
+  }
+  .loader_pr{
+    margin: 0 auto;
+    width: 150px;
+    height: 150px;
+  }
