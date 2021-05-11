@@ -20,7 +20,7 @@ interface Service
      * @param  mixed $databasename Databsename By Wich We Have To Set Database
      * @return void
      */
-    public function Setthedatabase($databasename);
+    // public function Setthedatabase($databasename);
 
     /**
      * Abbstract Class  For Finding Date is Greater or lesser.
@@ -51,6 +51,15 @@ interface Service
      * @return string It will Return the Sql Query Of The Given Database.
      */
     public function codeToTakeBackupofDB($originalDB);
+
+
+    /**
+     * getAllTimezone This will give all Time Zone
+     *
+     *  @return array  It will Return the All Time Zone with Its Region.
+     */
+    public function getAllTimezone();
+
 
 
 

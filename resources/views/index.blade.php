@@ -31,21 +31,39 @@
                 <!-- <h1 class="text-xl font-bold">Abstract UI</h1> -->
 
                 <h1 class="text-xl md:text-2xl font-bold leading-tight mt-12">Log in to your account</h1>
+                @if($errors->any())
+                <div class="col-sm-12">
+                    <div class="alert  alert-danger alert-dismissible fade show" role="alert">
+                        {{$errors->first()}}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                </div>
+                @endif
+                @if(session()->has('success_message'))
+                <div class="alert alert-success">
+                    {{ session()->get('success_message') }}
+                </div>
+                @endif
 
                 <form class="mt-6" action="#" id="login_form" autocomplete="off">
                     <div>
                         <label class="block text-gray-700">Email Address</label>
                         <input type="email" id="username" name="username" placeholder="Enter Email Address"
                             class="w-full px-4 py-3 rounded-lg bg-gray-200 mt-2 border focus:border-blue-500 focus:bg-white focus:outline-none form-control"
-                            autofocus autocomplete="off" required="" data-parsley-type="email" data-parsley-trigger="blur"
-                            data-parsley-required-message="Required" data-parsley-type-message="Invalid Email"  >
+                            autofocus autocomplete="off" required="" data-parsley-type="email"
+                            data-parsley-trigger="blur" data-parsley-required-message="Required"
+                            data-parsley-type-message="Invalid Email">
                     </div>
 
                     <div class="mt-4">
                         <label class="block text-gray-700">Password</label>
-                        <input type="password"  id="user_password" name="user_password" placeholder="Enter Password" minlength="6" class="w-full px-4 py-3 rounded-lg bg-gray-200 mt-2 border focus:border-blue-500
+                        <input type="password" id="user_password" name="user_password" placeholder="Enter Password"
+                            minlength="6" class="w-full px-4 py-3 rounded-lg bg-gray-200 mt-2 border focus:border-blue-500
                           focus:bg-white focus:outline-none form-control" required="" data-parsley-trigger="blur"
-                          data-parsley-required-message="Required" data-parsley-minlength-message="Minimum 6 digt Require" autocomplete="new-password">
+                            data-parsley-required-message="Required"
+                            data-parsley-minlength-message="Minimum 6 digt Require" autocomplete="new-password">
                     </div>
 
                     <div class="text-right mt-2">
@@ -61,6 +79,38 @@
         </div>
 
     </section>
+    <!-- Modal -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="myModalLabel">UID</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+
+                </div>
+                <div class="modal-body">
+                    <div id="modaldive">
+                        <label for="name" class="label_patch">UID</label><a href="#" style="font-size: 11px;"
+                            data-toggle="tooltip" data-placement="top" title="Must Contain 14 Charcter Alfa Numreic "><i
+                                class="feather icon-info inside_input_icon" style="font-size: 15px;"></i></a>
+                        <div class="inputWithIcon">
+                            <input type="text" id="uid" required="" data-parsley-trigger="blur"
+                                data-parsley-required-message="Required" class="input_text margin_top_0 form-control"
+                                placeholder="UID" data-parsley-pattern="^[A-Za-z0-9-]{14}$"
+                                data-parsley-pattern-message="Invalid Parten">
+                            <i class="feather icon-user inside_input_icon"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="w-full block bg-blue-500 hover:bg-blue-400 focus:bg-blue-400 text-white font-semibold rounded-lg
+                    px-4 py-3 mt-6" onclick="oncontinue()">Continue</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- <form action="#" id="login_form">
         <input type="text" id="username" name="username" required="" data-parsley-trigger="blur"
             data-parsley-errors-container=".usernameerror">
@@ -97,6 +147,34 @@
             }
         });
     });
+    function oncontinue() {
+        var uid = $("#uid").val();
+        var emailid = $("#username").val();
+        // alert(emailid)
+        // return
+        $.ajax({
+            url: base_url  +  '/checkuid',
+            type: 'POST',
+            data: {
+                uid:uid,
+                emailid:emailid
+            },
+            success: function(data) {
+                var response = data.trim();
+                if (response == 'NotFound') {
+                    alert('Email Id  Not Found');
+                } else if (response == 'Required') {
+                    alert('UID is  Mandatary');
+                } else if (response == 'Error') {
+                    alert('Something Went Wrong');
+                } else if (response == 'Invalid') {
+                    alert('Invaild UID');
+                } else {
+                    window.location.href ="{{route('/dashboard')}}";
+                }
+            },
+        });
+    }
     function authentication(event) {
 
         // $('#loading-image').show();
@@ -131,19 +209,28 @@
                         alert('Yor Time Is Not Started');
                     } else if (response == 'Expire') {
                         alert('Yor Liecence Is Expired');
+                    }else if (response == 'Check') {
+                        // alert('Open Popup Box');
+                        $('#myModal').modal('show');
+                    } else if (response == 'Error') {
+                        alert('Something Went Wrong');
+                    } else if (response == 'Stop') {
+                        alert('Your Service is Stoped');
                     } else {
-                        var ROLEID = response;
-                        if (ROLEID == 1) {
-                            window.location.href ="SuperAdmin/dashboard";
-                        } else if (ROLEID == 2) {
-                            window.location.href ="Admin/dashboard";
-                        }  else if (ROLEID == 3) {
-                            window.location.href ="User/dashboard";
-                        } else if (ROLEID == 4) {
-                            window.location.href ="User/dashboard";
-                        } else {
-                            alert('Wait');
-                        }
+                        console.log(response);
+                        window.location.href ="{{route('/dashboard')}}";
+                        // var ROLEID = response;
+                        // if (ROLEID == 1) {
+                        //     window.location.href ="SuperAdmin/dashboard";
+                        // } else if (ROLEID == 2) {
+                        //     window.location.href ="Admin/dashboard";
+                        // }  else if (ROLEID == 3) {
+                        //     window.location.href ="User/dashboard";
+                        // } else if (ROLEID == 4) {
+                        //     window.location.href ="User/dashboard";
+                        // } else {
+                        //     alert('Wait');
+                        // }
                     }
 
                 },

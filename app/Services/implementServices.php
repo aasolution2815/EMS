@@ -3,12 +3,12 @@
 namespace App\Services;
 
 use App\Services\Service;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Config;
 use DateTime;
+use DateTimeZone;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 
-
-class implementServices  implements Service
+class implementServices implements Service
 {
     /**
      * It is select Function For The  Select Query .
@@ -17,28 +17,16 @@ class implementServices  implements Service
      * @param  mixed $whereconditions all The Where Conditions Of Which Records To fetch.
      * @return $All The Data Of The Query.
      */
-    public function selectfunction($tablename, $whereconditions) {
+    public function selectfunction($tablename, $whereconditions)
+    {
         $selectfunction = DB::table($tablename)
             ->where($whereconditions)->get();
-            return $selectfunction;
+        return $selectfunction;
     }
 
-    /**
-     * For Seting The Dataabse.
-     *
-     * @param  mixed $databasename Databsename By Wich We Have To Set Database
-     * @return void
-     */
-    public function Setthedatabase($databasename)
-    {
-        Config::set('database.connections.dynamicsql.database', $databasename);
-        Config::set('database.default', 'dynamicsql');
-    }
 
-    public function SetTimeZone($zone)
-    {
-        date_default_timezone_set($zone);
-    }
+
+
 
     /**
      * AUTHENTICATION It for Finding WHether A Date Is Present In Bwetwen two Dates
@@ -51,22 +39,22 @@ class implementServices  implements Service
      * For Finding Data To Be Grater Pass Start In Type And For Lesser Pass End As Type.
      * @return true or False
      */
-    public function AUTHENTICATION($FirstDate,$ChekingDate,$type)
+    public function AUTHENTICATION($FirstDate, $ChekingDate, $type)
     {
-       if ($type == 'Start') {
-          if ($FirstDate >= $ChekingDate) {
-              return 1;
-          } else {
-            return 0;
-          }
-       }
-       if ($type == 'End') {
-        if ($FirstDate <= $ChekingDate) {
-            return 1;
-        } else {
-            return 0;
+        if ($type == 'Start') {
+            if ($FirstDate >= $ChekingDate) {
+                return 1;
+            } else {
+                return 0;
+            }
         }
-    }
+        if ($type == 'End') {
+            if ($FirstDate <= $ChekingDate) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
     }
 
     /**
@@ -74,13 +62,13 @@ class implementServices  implements Service
      *
      * @param  mixed $date It is First Date it Should Be Less Then Second Date.
      * @param  mixed $secondDate It is a Second Date.
-    * @return string It will Retrun Message wether Date Passed From today Date.
+     * @return string It will Retrun Message wether Date Passed From today Date.
      */
-    public function checkpastDate($date,$secondDate)
+    public function checkpastDate($date, $secondDate)
     {
         $date = new DateTime($date);
         $now = new DateTime($secondDate);
-        if($date < $now) {
+        if ($date < $now) {
             $message = 'Past';
             // echo 'date is in the past';
         } else {
@@ -97,7 +85,7 @@ class implementServices  implements Service
      */
     public function codeToTakeBackupofDB($originalDB)
     {
-        $this->Setthedatabase($originalDB);
+        Setthedatabase($originalDB);
         $targetTables = [];
         $newLine = "\r\n";
         $queryTables = DB::select("SELECT  table_name FROM information_schema.tables WHERE table_schema = '$originalDB'  ORDER BY table_name");
@@ -127,7 +115,6 @@ class implementServices  implements Service
 
                 }
 
-
                 $valuesQuery = "(";
                 foreach ($row as $key => $value) {
                     $valuesQuery .= "'" . $value . "'" . ", ";
@@ -147,5 +134,55 @@ class implementServices  implements Service
             $content .= $newLine;
         }
         return $content;
+    }
+
+    /**
+     * getAllTimezone This will give all Time Zone
+     *
+     * @return array  It will Return the All Time Zone with Its Region.
+     */
+    public function getAllTimezone()
+    {
+        $zoneIdentifiers = timezone_identifiers_list();
+        $zoneLocations = array();
+
+        foreach ($zoneIdentifiers as $zoneIdentifier) {
+            $zone = explode('/', $zoneIdentifier);
+            $desiredRegions = array(
+                'Africa', 'America', 'Antarctica', 'Arctic', 'Asia', 'Atlantic', 'Australia', 'Europe', 'Indian', 'Pacific',
+            );
+            if (in_array($zone[0], $desiredRegions)) {
+                if (isset($zone[1]) != '') {
+                    $area = str_replace('_', ' ', $zone[1]);
+                    if (!empty($zone[2])) {
+                        $area = $area . ' (' . str_replace('_', ' ', $zone[2]) . ')';
+                    }
+                    $zoneLocations[$zone[0]][$zoneIdentifier] = $zone[0] . '/' . $area;
+                }
+            }
+        }
+
+        $selectOptions = "";
+        $TIMEZONE = [];
+
+        foreach ($zoneLocations as $zoneRegion => $regionAreas) {
+            $REGIONAREA = [];
+            // print_r($zoneRegion);
+            foreach ($regionAreas as $regionArea => $zoneLabel) {
+                $CREATEVALUEARRY = [];
+                $currentTimeInZone = new DateTime("now", new DateTimeZone($regionArea));
+                $currentTimeDiff = $currentTimeInZone->format('P');
+                $selectOptions .= "<option value=\"$regionArea\">(GMT $currentTimeDiff) $zoneLabel</option>\n";
+                $LABELE = '( GMT'.  $currentTimeDiff . ') '. $zoneLabel;
+                $CREATEVALUEARRY[] = $regionArea;
+                $CREATEVALUEARRY[] = $LABELE;
+                $REGIONAREA[] = $CREATEVALUEARRY;
+
+            }
+            $TIMEZONE[$zoneRegion]= $REGIONAREA;
+            // echo "----------------";
+        }
+        return $TIMEZONE;
+
     }
 }

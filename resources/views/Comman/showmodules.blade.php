@@ -4,7 +4,7 @@
 $ROLEID = session('RoleId');
 ?>
 <style>
-    .error_label_select2{
+    .error_label_select2 {
         position: relative;
         margin: 0px 5px;
         font-size: 11px;
@@ -16,14 +16,15 @@ $ROLEID = session('RoleId');
         <div id="textbox" class="">
             <p class="alignleft bold_heavy bold_font_heading" id="add_client">Modules</p>
             <p class="alignright margin-top_10">
-                <a href="javascript:history.back()"><span class="btn_with_icon" style="margin-right: 15px;"><i class="feather icon-corner-up-left  small_icon_left"></i>
+                <a href="javascript:history.back()"><span class="btn_with_icon" style="margin-right: 15px;"><i
+                            class="feather icon-corner-up-left  small_icon_left"></i>
                         Back </span></a>
 
 
             </p>
         </div>
         <div style="clear: both;"></div>
-        @if (session('RoleId') == '1')
+        @if (session('RoleId') == '1' || session('RoleId') == '2')
         <form action="#" id="module_form">
             <div id="form_patch">
                 <div class="row">
@@ -32,8 +33,12 @@ $ROLEID = session('RoleId');
                         <div>
                             <label for="name" class="input_label_light">Module Name</label>
                             <div class="inputWithIcon">
-                                <input type="text" class="input_text margin_top_0"  id="module_name" placeholder="Module name" required="" data-parsley-trigger="blur" data-parsley-required-message="Required">
+                                <input type="text" class="input_text margin_top_0" id="module_name"
+                                    placeholder="Module name" required="" data-parsley-trigger="blur"
+                                    data-parsley-required-message="Required" data-parsley-errors-container="#modname">
                                 <i class="feather icon-user inside_input_icon"></i>
+                                <span class="form-error error_label" id="modname">
+                                    <i class="feather icon-x error_inputcolor"></i></span>
                             </div>
                         </div>
                     </div>
@@ -42,9 +47,14 @@ $ROLEID = session('RoleId');
                         <div>
                             <label for="name" class="input_label_light">URL</label>
                             <div class="inputWithIcon">
-                                <input type="text" class="input_text margin_top_0" placeholder="Module Url" id="module_url" placeholder="Module URL" required="" data-parsley-trigger="blur" data-parsley-required-message="Required">
+                                <input type="text" class="input_text margin_top_0" placeholder="Module Url"
+                                    id="module_url" placeholder="Module URL" required="" data-parsley-trigger="blur"
+                                    data-parsley-required-message="Required" data-parsley-errors-container="#urlclass">
                                 <i class="feather icon-user inside_input_icon"></i>
+                                <span class="form-error error_label" id="urlclass">
+                                    <i class="feather icon-x error_inputcolor"></i></span>
                             </div>
+
                         </div>
                     </div>
                     <div class="col-md-4 col-sm-6 col-xs-12 padding_10">
@@ -52,12 +62,17 @@ $ROLEID = session('RoleId');
                         <div>
                             <label for="name" class="dropdown_label_light">Select Category</label>
                             <div>
-                                <select class="js-example-basic-single" name="category_id" id="category_id" required="" data-parsley-trigger="blur" data-parsley-required-message="Required">
+                                <select class="js-example-basic-single" name="category_id" id="category_id" required=""
+                                    data-parsley-trigger="blur" data-parsley-required-message="Required"
+                                    data-parsley-errors-container="#catid">
                                     <option value=""></option>
                                     @foreach ($CATDETAilS as $CAT)
                                     <option value="{{$CAT->CATEGORY_ID}}">{{$CAT->CATEGORYNAME}}</option>
                                     @endforeach
                                 </select>
+                                <span class="form-error error_label" id="catid">
+                                    <i class="feather icon-x error_inputcolor"></i></span>
+                                {{-- <div id="startTimeErrorContainer"></div> --}}
                             </div>
                         </div>
                     </div>
@@ -65,7 +80,8 @@ $ROLEID = session('RoleId');
                         <div>
                             <label for="name" class="input_label_light">Description</label>
                             <div class="inputWithIcon">
-                                <textarea id="w3review" name="w3review" rows="4" cols="50" name="description" id="description" class="textarea_p"></textarea>
+                                <textarea id="w3review" name="w3review" rows="4" cols="50" name="description"
+                                    id="description" class="textarea_p"></textarea>
                                 <!-- <i class="feather icon-user inside_input_icon"></i> -->
                             </div>
                         </div>
@@ -110,22 +126,23 @@ $ROLEID = session('RoleId');
 @endsection
 @section('addscriptscontent')
 <script>
-var CSRF_TOKEN = $('meta[name="csrf-token"]').attr('content');
+    var CSRF_TOKEN = $('meta[name="csrf-token"]').attr('content');
 var path = {!! json_encode(url('/')) !!};
     $(document).ready(function() {
         $(".js-example-basic-single").select2({
             placeholder: "Select Category",
             allowClear:true
         });
-        $('#module_form').parsley({
+        // $('#module_form').parsley({
 
-            errorClass: 'is-invalid text-danger',
-            successClass: 'is-valid', // Comment this option if you don't want the field to become green when valid. Recommended in Google material design to prevent too many hints for user experience. Only report when a field is wrong.
-            errorsWrapper: '<span class="form-error error_label "><i class="feather icon-x error_inputcolor"></i></span>',
-            errorTemplate: '<span></span>',
-            trigger: 'change'
+        //     errorClass: 'is-invalid text-danger',
+        //     successClass: 'is-valid', // Comment this option if you don't want the field to become green when valid. Recommended in Google material design to prevent too many hints for user experience. Only report when a field is wrong.
+        //     errorsWrapper: '<span class="form-error error_label "><i class="feather icon-x error_inputcolor"></i></span>',
+        //     errorTemplate: '<span></span>',
+        //     trigger: 'change'
 
-        });
+        // });
+        $('#module_form').parsley();
         $.ajaxSetup({
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')

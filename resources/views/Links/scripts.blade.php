@@ -11,8 +11,10 @@
 <script type="text/javascript" src="{{asset('/public/assets/js/script.min.js') }}"></script>
 <script src="{{asset('/public/assets/js/parsley.js') }}"></script>
 <script src="{{asset('/public/assets/js/select2.js') }}"></script>
+<script src="{{asset('/public/assets/js/jquery.dataTables.min.js') }}"></script>
 
-<script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+{{-- <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script> --}}
+
 <!-- <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script> -->
 
 

@@ -35,66 +35,6 @@ class EmsModel extends Model
     }
 
     /**
-     * This Function is to Save the Details
-     * and Send Response
-     * @param $data \Illuminate\Http\Request  $data will Have All Data To insert.
-     * @param $tablename \Illuminate\Http\Request  $tablename Tabel Name.
-     * @return \Illuminate\Http\Response Return The Id Of The Record Inserted.
-     */
-    public function insertRecords($data, $tablename)
-    {
-        $insert = DB::table($tablename)->insertGetId($data);
-        return $insert;
-    }
-
-    /**
-     * updateRecords It Will Update The Details
-     *
-     * @param  mixed $data It is a Data That Is Updated.
-     * @param  mixed $tablename tabel which Need To Be Update
-     * @param  mixed $uniquecloumn Unique Column name By Which row Will Update (It is Primary Key);
-     * @param  mixed $uniquecloumnvalue Unique Column Value .(It is Primary Key Value);
-     * @return string It Will return Messgge that Record is Updated Or Send That Error Founded.
-     */
-    public function updateRecords($data, $tablename, $uniquecloumn, $uniquecloumnvalue)
-    {
-
-        try {
-            DB::table($tablename)->where($uniquecloumn, $uniquecloumnvalue)->update($data);
-            $message = 'Done';
-        } catch (\Exception $th) {
-            $ERROR = $th->getMessage();
-            $message = $ERROR;
-            //throw $th;
-        }
-
-        return $message;
-    }
-
-    /**
-     * multiUpdateRecords It Will Update MultiRecords Based On WhereIn And WherenotIn
-     *
-     * @param  mixed $data The Data Wich need to Be Updated
-     * @param  mixed $tablename Tabel On Wich Data is Updated
-     * @param  mixed $uniquecloumn Unique Column name By Which row Will Update (It is Primary Key);
-     * @param  mixed $uniquecloumnvalue Unique Column Value .(It is Primary Key) But It is Aary Of Values
-     * @param  mixed $type It will tell Wether We have To Aplly WhereIn OR WherNOtIn Condition.
-     * @return string It Will return Messgge that Record is Updated Or Send That Error Founded.
-     */
-    public function multiUpdateRecords($data, $tablename, $uniquecloumn, $uniquecloumnvalue,$type)
-    {
-        try {
-            DB::table($tablename)->$type($uniquecloumn, $uniquecloumnvalue)->update($data);
-            $message = 'Done';
-        } catch (\Exception $th) {
-            $ERROR = $th->getMessage();
-            $message = $ERROR;
-            //throw $th;
-        }
-        return $message;
-    }
-
-    /**
      * Authtentication It Is For The Authentication Purpose
      *
      * @param  mixed $username Username By Which Authentication Need To Be Done
@@ -106,43 +46,86 @@ class EmsModel extends Model
         try {
             $where[] = ['EMAILID', $username];
             $loginCredentailDetails = $this->getservices->selectfunction('sup_tbl_login_credential', $where);
+            // print_r($loginCredentailDetails);
             // print_r(Crypt::decrypt($loginCredentailDetails[0]->AUTHENTICATION_START));
             // date_default_timezone_set('Asia/Kolkata');
             $getTodaysDateToAuthenticate = date("Y-m-d");
             $returnmessage = '';
             if (count($loginCredentailDetails) > 0) {
                 $RoleId = $loginCredentailDetails[0]->ROLEID;
-                $USERID = $loginCredentailDetails[0]->USERID;
-                $CLIENTID = $loginCredentailDetails[0]->CLIENTID;
-                $USERNAME = $loginCredentailDetails[0]->USERNAME;
-                $EMAILID = $loginCredentailDetails[0]->EMAILID;
-                $getPrefix = $loginCredentailDetails[0]->PREFIX;
-                $ZONE = $loginCredentailDetails[0]->PREFIX;
-                $START = $loginCredentailDetails[0]->AUTHENTICATION_START;
-                $END = $loginCredentailDetails[0]->AUTHENTICATION_END;
                 if ($RoleId == 1) {
                     $Password = $loginCredentailDetails[0]->USERPASSWORD;
                     $getDecryptPassword = Crypt::decrypt($Password);
                     $databasename = Config::get('database.connections.' . Config::get('database.default'));
                     if ($userPasword == $getDecryptPassword) {
+                        $USERID = $loginCredentailDetails[0]->USERID;
+                        $CLIENTID = $loginCredentailDetails[0]->CLIENTID;
+                        $USERNAME = $loginCredentailDetails[0]->USERNAME;
+                        $EMAILID = $loginCredentailDetails[0]->EMAILID;
+                        $getPrefix = $loginCredentailDetails[0]->PREFIX;
+                        $ZONE = $loginCredentailDetails[0]->PREFIX;
+                        $START = $loginCredentailDetails[0]->AUTHENTICATION_START;
+                        $END = $loginCredentailDetails[0]->AUTHENTICATION_END;
                         Session::put('RoleId', $RoleId);
-                        Session::put('USERID', $USERID);
+                        Session::put('USERID', 1);
                         Session::put('CLIENTID', $CLIENTID);
                         Session::put('USERNAME', $USERNAME);
+                        Session::put('Name', 'Super Admin');
                         Session::put('EMAILID', $EMAILID);
                         Session::put('DATABASENAME', $databasename['database']);
-                        $returnmessage = $RoleId;
+                        Session::put('LOGO', '');
+                        Session::put('TIMEZONE', 'Asia/Kolkata');
+                        Session::put('PROFILE', '');
+                        $ENCRYPTROLEID = Crypt::encrypt($RoleId);
+                        $returnmessage = $ENCRYPTROLEID;
                     } else {
                         $returnmessage = 'NotMatch';
                     }
+                } else if ($RoleId == 2) {
+                    $where1[] = ['SUPEMAILID', $username];
+                    $where1[] = ['FLAG', 'Show'];
+                    $loginCredentailDetails = $this->getservices->selectfunction('sup_tbl_superadmin_users', $where1);
+                    if (count($loginCredentailDetails) > 0) {
+                        $Password = $loginCredentailDetails[0]->SUPPASSWORD;
+                        $getDecryptPassword = Crypt::decrypt($Password);
+                        if ($userPasword == $getDecryptPassword) {
+                            $returnmessage = 'Check';
+                        } else {
+                            $returnmessage = 'NotMatch';
+                        }
+                    } else {
+                        $returnmessage = 'NotFound';
+                    }
                 } else {
+                    $USERID = $loginCredentailDetails[0]->USERID;
+                    $CLIENTID = $loginCredentailDetails[0]->CLIENTID;
+                    $USERNAME = $loginCredentailDetails[0]->USERNAME;
+                    $EMAILID = $loginCredentailDetails[0]->EMAILID;
+                    $getPrefix = $loginCredentailDetails[0]->PREFIX;
+                    $ZONE = $loginCredentailDetails[0]->PREFIX;
+                    $START = $loginCredentailDetails[0]->AUTHENTICATION_START;
+                    $END = $loginCredentailDetails[0]->AUTHENTICATION_END;
+                    $TIMEZONE = $loginCredentailDetails[0]->TIMEZONE;
+                    $FLAG = $loginCredentailDetails[0]->FLAG;
+                    SetTimeZone($TIMEZONE);
                     $databasename = Config::get('database.connections.' . Config::get('database.default'));
                     $getdynamicdatabsename = $getPrefix . '_management';
-                    $this->getservices->Setthedatabase($getdynamicdatabsename);
+                    DB::disconnect('dynamicsql');
+                    Setthedatabase($getdynamicdatabsename);
                     $selectwhere[] = ['EMAILID', $username];
                     $getuserDetails = $this->getservices->selectfunction('mst_tbl_users', $selectwhere);
+                    $FLAGCONDITION[] = ['FLAG', 'Show'];
+                    $componydetails = $this->getservices->selectfunction('mst_tbl_company_information', $FLAGCONDITION);
+                    $LOGO = '';
+                    if (count($componydetails) > 0) {
+                        $LOGO = $componydetails[0]->COMPANYLOGO;
+                    }
                     $Password = $getuserDetails[0]->PASSWORDS;
                     $ADMINRIGHTS = $getuserDetails[0]->ADMINRIGHTS;
+                    $PROFILEPICTURE = $getuserDetails[0]->PROFILEPICTURE;
+                    $FULLNAME = $getuserDetails[0]->FULLNAME;
+                    $USERIDSOFUSER = $getuserDetails[0]->USERID;
+
                     $getDecryptPassword = Crypt::decrypt($Password);
                     if ($userPasword == $getDecryptPassword) {
                         $AUTHENTICATION_START = Crypt::decrypt($START);
@@ -151,24 +134,48 @@ class EmsModel extends Model
                         if ($getAuthentications1 == 1) {
                             $getAuthentications2 = $this->getservices->AUTHENTICATION($getTodaysDateToAuthenticate, $AUTHENTICATION_END, 'End');
                             if ($getAuthentications2 == 1) {
-                                Session::put('USERID', $USERID);
-                                Session::put('CLIENTID', $CLIENTID);
-                                Session::put('USERNAME', $USERNAME);
-                                Session::put('EMAILID', $EMAILID);
-                                Session::put('TIMEZONE', $ZONE);
-                                Session::put('PREFIX', $getPrefix);
-                                Session::put('DATABASENAME', $getdynamicdatabsename);
-                                Session::put('ORIGNALDATABASENAME', $databasename['database']);
-                                if ($RoleId == 3) {
-                                    if ($ADMINRIGHTS == 'Yes') {
-                                        $returnmessage = 'Both';
+                                if ($FLAG == 'Show' || $FLAG == 'Stop') {
+                                    if ($FLAG == 'Stop') {
+                                        $returnmessage = 'Stop';
                                     } else {
-                                        Session::put('RoleId', $RoleId);
-                                        $returnmessage = $RoleId;
+                                        Session::put('USERID', $USERIDSOFUSER);
+                                        Session::put('CLIENTID', $CLIENTID);
+                                        Session::put('USERNAME', $USERNAME);
+                                        Session::put('EMAILID', $EMAILID);
+                                        Session::put('TIMEZONE', $ZONE);
+                                        Session::put('PREFIX', $getPrefix);
+                                        Session::put('DATABASENAME', $getdynamicdatabsename);
+                                        Session::put('ORIGNALDATABASENAME', $databasename['database']);
+                                        Session::put('LOGO', $LOGO);
+                                        Session::put('TIMEZONE', $TIMEZONE);
+                                        Session::put('PROFILE', $PROFILEPICTURE);
+                                        Session::put('Name', $FULLNAME);
+                                        $TODAYDATE = date('Y-m-d');
+                                        $TODAYTIME = date(' H:i:s');
+                                        $SAVELOGINREPORTS['USER_ID'] = $USERIDSOFUSER;
+                                        $SAVELOGINREPORTS['ACTION_DATE'] = $TODAYDATE;
+                                        $SAVELOGINREPORTS['ACTION_TIME'] = $TODAYTIME;
+                                        $SAVELOGINREPORTS['STATUS'] = 'Login';
+                                        if ($RoleId == 4) {
+                                            if ($ADMINRIGHTS == 'Yes') {
+                                                $returnmessage = 'Both';
+                                            } else {
+                                                Session::put('RoleId', $RoleId);
+                                                $ENCRYPTROLEID = Crypt::encrypt($RoleId);
+                                                insertRecords($SAVELOGINREPORTS, 'mst_tbl_login_aduit_reports');
+                                                $returnmessage = $ENCRYPTROLEID;
+                                            }
+                                        } else {
+                                            Session::put('RoleId', $RoleId);
+                                            insertRecords($SAVELOGINREPORTS, 'mst_tbl_login_aduit_reports');
+                                            $ENCRYPTROLEID = Crypt::encrypt($RoleId);
+                                            $returnmessage = $ENCRYPTROLEID;
+                                        }
                                     }
+
+                                    # code...
                                 } else {
-                                    Session::put('RoleId', $RoleId);
-                                    $returnmessage = $RoleId;
+                                    $returnmessage = 'NotFound';
                                 }
                             } else {
                                 $returnmessage = 'Expire';
@@ -187,7 +194,7 @@ class EmsModel extends Model
             return $returnmessage;
         } catch (\Exception $e) {
             $Errors = $e->getMessage();
-            return 'Error' . $Errors;
+            return 'Error';
         }
 
     }
@@ -218,8 +225,11 @@ class EmsModel extends Model
             $companylogo = $data['COMPANYLOGO'];
             $type = $data['AUTHENTICATION_TYPE'];
             $no_of_days = $data['AUTHENTICATION_NUMBER'];
+            $LOCATION = $data['LOCATION'];
+            $WEBSITE = $data['WEBSITE'];
+            $TIMEZONE = $data['TIMEZONE'];
             $responsemessage = '';
-
+            DB::beginTransaction();
             $query = "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME =  ?";
             $db = DB::select($query, [$databsename]);
             if (empty($db)) {
@@ -251,17 +261,21 @@ class EmsModel extends Model
                                 $SUPDETAILS['CREATED_AT'] = $timestamp;
                                 $SUPDETAILS['USERLIMITS'] = $user_lmit;
                                 $SUPDETAILS['COMPNAYLOGO'] = $companylogo;
+                                $SUPDETAILS['LOCATION'] = $LOCATION;
+                                $SUPDETAILS['TIMEZONE'] = $TIMEZONE;
+                                $SUPDETAILS['WEBSITE'] = $WEBSITE;
 
-                                $CLIENTID = $this->insertRecords($SUPDETAILS, 'sup_tbl_all_client');
+                                $CLIENTID = insertRecords($SUPDETAILS, 'sup_tbl_all_client');
                                 /** Save Records In sup_tbl_login_credential*/
                                 $LOGINCREDENTIALS['CLIENTID'] = $CLIENTID;
                                 $LOGINCREDENTIALS['EMAILID'] = $admin_emailid;
-                                $LOGINCREDENTIALS['ROLEID'] = '2';
+                                $LOGINCREDENTIALS['ROLEID'] = '3';
                                 $LOGINCREDENTIALS['CREATED_AT'] = $timestamp;
                                 $LOGINCREDENTIALS['AUTHENTICATION_START'] = $encryptStartDate;
                                 $LOGINCREDENTIALS['AUTHENTICATION_END'] = $encryptDate;
                                 $LOGINCREDENTIALS['PREFIX'] = $client_prefix;
-                                $userId = $this->insertRecords($LOGINCREDENTIALS, 'sup_tbl_login_credential');
+                                $LOGINCREDENTIALS['TIMEZONE'] = $TIMEZONE;
+                                $userId = insertRecords($LOGINCREDENTIALS, 'sup_tbl_login_credential');
                                 try {
                                     DB::statement('Create database ' . $databsename);
                                     $tables = DB::select("SELECT  table_name FROM information_schema.tables WHERE table_schema = '$originalDB' and TABLE_NAME NOT LIKE 'sup_%' ORDER BY table_name");
@@ -273,6 +287,7 @@ class EmsModel extends Model
                                         $i++;
                                     }
                                     try {
+                                        DB::disconnect('dynamicsql');
                                         /** Save Records In The mst_tbl_users */
                                         $USERDETAILS['FULLNAME'] = $admin_name;
                                         $USERDETAILS['MOBLIENO'] = $contatct_info;
@@ -280,30 +295,38 @@ class EmsModel extends Model
                                         $USERDETAILS['PASSWORDS'] = $encrypt_password;
                                         $USERDETAILS['EMPCODE'] = $empcode_format;
                                         $USERDETAILS['CREATED_AT'] = $timestamp;
-                                        $USERDETAILS['ROLEID'] = '2';
-                                        DB::disconnect('mysql');
-                                        Config::set('database.connections.mysql.database', $databsename);
-                                        $userId = $this->insertRecords($USERDETAILS, 'mst_tbl_users');
+                                        $USERDETAILS['ROLEID'] = '3';
+                                        Setthedatabase($databsename);
+                                        // Config::set('database.connections.mysql.database', $databsename);
+                                        $userId = insertRecords($USERDETAILS, 'mst_tbl_users');
                                         /** Save Records In The mst_tbl_company_information */
                                         $COMPONYINFO['COMPANYLOGO'] = $companylogo;
                                         $COMPONYINFO['COMPANYNAME'] = $company_name;
-                                        $COMPANYID = $this->insertRecords($COMPONYINFO, 'mst_tbl_company_information');
+                                        $COMPONYINFO['WEBSITE'] = $WEBSITE;
+                                        $COMPONYINFO['COMPANYLOCATION'] = $LOCATION;
+                                        $COMPONYINFO['TIMEZONE'] = $TIMEZONE;
+                                        $COMPANYID = insertRecords($COMPONYINFO, 'mst_tbl_company_information');
                                         if ($COMPANYID > 0) {
-                                            Config::set('database.connections.mysql.database', $originalDB);
-                                            Config::set('database.default', 'mysql');
+
+                                            // Config::set('database.connections.mysql.database', $originalDB);
+                                            // Config::set('database.default', 'mysql');
                                             $responsemessage = 'DONE';
                                         }
+                                        DB::commit();
 
                                     } catch (\Exception $e) {
                                         $Errors = $e->getMessage();
+                                        DB::rollback();
                                         $responsemessage = 'Error1->' . $Errors;
                                     }
                                 } catch (\Exception $e) {
                                     $Errors = $e->getMessage();
+                                    DB::rollback();
                                     $responsemessage = 'ErrorInDB->' . $Errors;
                                 }
                             } catch (\Exception $e) {
                                 $Errors = $e->getMessage();
+                                DB::rollback();
                                 $responsemessage = 'Error2' . $Errors;
                             }
                         } else {
@@ -318,9 +341,11 @@ class EmsModel extends Model
             } else {
                 $responsemessage = 'DBPRESENT';
             }
+            Setthedatabase($originalDB);
             return $responsemessage;
         } catch (\Exception $e) {
             $Errors = $e->getMessage();
+            DB::rollback();
             return 'Error3->' . $Errors;
         }
 
@@ -352,6 +377,9 @@ class EmsModel extends Model
             $companylogo = $data['COMPANYLOGO'];
             $type = $data['AUTHENTICATION_TYPE'];
             $no_of_days = $data['AUTHENTICATION_NUMBER'];
+            $LOCATION = $data['LOCATION'];
+            $WEBSITE = $data['WEBSITE'];
+            $TIMEZONE = $data['TIMEZONE'];
             $responsemessage = '';
 
             /** Check Wether Email Id Is Prsent In The Login Table
@@ -398,8 +426,11 @@ class EmsModel extends Model
                         $SUPDETAILS['UPDATED_AT'] = $timestamp;
                         $SUPDETAILS['USERLIMITS'] = $user_lmit;
                         $SUPDETAILS['COMPNAYLOGO'] = $companylogo;
+                        $SUPDETAILS['LOCATION'] = $LOCATION;
+                        $SUPDETAILS['TIMEZONE'] = $TIMEZONE;
+                        $SUPDETAILS['WEBSITE'] = $WEBSITE;
 
-                        $UPDATE1 = $this->updateRecords($SUPDETAILS, 'sup_tbl_all_client', 'CLIENT_ID', $CLIENT_ID);
+                        $UPDATE1 = updateRecords($SUPDETAILS, 'sup_tbl_all_client', 'CLIENT_ID', $CLIENT_ID);
                         if ($UPDATE1 == 'Done') {
                             /** Fetch The Login Credential Detils */
                             $FETCHGETLOGINCREDENTIALDETAILS = DB::table('sup_tbl_login_credential')
@@ -408,13 +439,15 @@ class EmsModel extends Model
                             /** Update Records In sup_tbl_login_credential*/
                             $LOGINCREDENTIALS['CLIENTID'] = $CLIENT_ID;
                             $LOGINCREDENTIALS['EMAILID'] = $admin_emailid;
-                            $LOGINCREDENTIALS['ROLEID'] = '2';
-                            $LOGINCREDENTIALS['UPDATEDAT'] = $timestamp;
+                            $LOGINCREDENTIALS['ROLEID'] = '3';
+                            $LOGINCREDENTIALS['UPDATED_AT'] = $timestamp;
                             $LOGINCREDENTIALS['AUTHENTICATION_START'] = $encryptStartDate;
                             $LOGINCREDENTIALS['AUTHENTICATION_END'] = $encryptDate;
-                            $UPDATE2 = $this->updateRecords($LOGINCREDENTIALS, 'sup_tbl_login_credential', 'USERID', $FETChUSERID);
+                            $LOGINCREDENTIALS['TIMEZONE'] = $TIMEZONE;
+                            $UPDATE2 = updateRecords($LOGINCREDENTIALS, 'sup_tbl_login_credential', 'USERID', $FETChUSERID);
                             if ($UPDATE2 == 'Done') {
-                                $this->getservices->Setthedatabase($CLIENTDATABASENAME);
+                                DB::disconnect('dynamicsql');
+                                Setthedatabase($CLIENTDATABASENAME);
                                 /** Update Records In The mst_tbl_users */
                                 $USERDETAILS['FULLNAME'] = $admin_name;
                                 $USERDETAILS['MOBLIENO'] = $contatct_info;
@@ -422,23 +455,26 @@ class EmsModel extends Model
                                 $USERDETAILS['PASSWORDS'] = $encrypt_password;
                                 $USERDETAILS['EMPCODE'] = $empcode_format;
                                 $USERDETAILS['UPDATED_AT'] = $timestamp;
-                                $USERDETAILS['ROLEID'] = '2';
-                                $UPDATE3 = $this->updateRecords($USERDETAILS, 'mst_tbl_users', 'EMAILID', $ADMINEMAILID);
+                                $USERDETAILS['ROLEID'] = '3';
+                                $UPDATE3 = updateRecords($USERDETAILS, 'mst_tbl_users', 'EMAILID', $ADMINEMAILID);
                                 if ($UPDATE3 == 'Done') {
                                     /** Update  Records In The mst_tbl_company_information if Not Prsent Then Add it*/
                                     $COMPANYDETAILS = DB::table('mst_tbl_company_information')->where(['FLAG' => 'Show'])->get();
                                     $COMPONYINFO['COMPANYLOGO'] = $companylogo;
                                     $COMPONYINFO['COMPANYNAME'] = $company_name;
+                                    $COMPONYINFO['WEBSITE'] = $WEBSITE;
+                                    $COMPONYINFO['COMPANYLOCATION'] = $LOCATION;
+                                    $COMPONYINFO['TIMEZONE'] = $TIMEZONE;
                                     if (count($COMPANYDETAILS) > 0) {
                                         $COMPANY_ID = $COMPANYDETAILS[0]->COMPANY_ID;
-                                        $UPDATE4 = $this->updateRecords($COMPONYINFO, 'mst_tbl_company_information', 'COMPANY_ID', $COMPANY_ID);
+                                        $UPDATE4 = updateRecords($COMPONYINFO, 'mst_tbl_company_information', 'COMPANY_ID', $COMPANY_ID);
                                         if ($UPDATE4 == 'Done') {
                                             $responsemessage = 'DONE';
                                         } else {
                                             $responsemessage = 'Error' . $UPDATE4;
                                         }
                                     } else {
-                                        $COMPANYID = $this->insertRecords($COMPONYINFO, 'mst_tbl_company_information');
+                                        $COMPANYID = insertRecords($COMPONYINFO, 'mst_tbl_company_information');
                                         $responsemessage = 'DONE';
                                     }
 
@@ -486,10 +522,10 @@ class EmsModel extends Model
             $CLIENTDETAILS = DB::table('sup_tbl_all_client')->where(['CLIENT_ID' => $DECRYPTCLIENTID])->first();
             /** This Is Update Function Which Will Delete All Client Details By Updating Flag in sup_tbl_all_client */
             $DETAILS['FLAG'] = 'Delete';
-            $UPDATE1 = $this->updateRecords($DETAILS, 'sup_tbl_all_client', 'CLIENT_ID', $DECRYPTCLIENTID);
+            $UPDATE1 = updateRecords($DETAILS, 'sup_tbl_all_client', 'CLIENT_ID', $DECRYPTCLIENTID);
             if ($UPDATE1 == 'Done') {
                 /** This Is Update Function Which Will Delete All Client Details By Updating Flag in sup_tbl_login_credential */
-                $UPDATE2 = $this->updateRecords($DETAILS, 'sup_tbl_login_credential', 'CLIENTID', $DECRYPTCLIENTID);
+                $UPDATE2 = updateRecords($DETAILS, 'sup_tbl_login_credential', 'CLIENTID', $DECRYPTCLIENTID);
                 if ($UPDATE2 == 'Done') {
                     $GETPREFIX = $CLIENTDETAILS->CLIENTPREFIX;
                     $DBNAME = $GETPREFIX . '_management';
@@ -527,10 +563,10 @@ class EmsModel extends Model
             $FLAG = $data['FLAG'];
             $UPDATEDETAILS['FLAG'] = $FLAG;
             /** This Is Update Function Which Will Delete All Client Details By Updating Flag in sup_tbl_all_client */
-            $UPDATE1 = $this->updateRecords($UPDATEDETAILS, 'sup_tbl_all_client', 'CLIENT_ID', $CLIENTID);
+            $UPDATE1 = updateRecords($UPDATEDETAILS, 'sup_tbl_all_client', 'CLIENT_ID', $CLIENTID);
             if ($UPDATE1 == 'Done') {
                 /** This Is Update Function Which Will Delete All Client Details By Updating Flag in sup_tbl_login_credential */
-                $UPDATE2 = $this->updateRecords($UPDATEDETAILS, 'sup_tbl_login_credential', 'CLIENTID', $CLIENTID);
+                $UPDATE2 = updateRecords($UPDATEDETAILS, 'sup_tbl_login_credential', 'CLIENTID', $CLIENTID);
                 if ($UPDATE2 == 'Done') {
                     $responsemessage = 'DONE';
                 } else {
@@ -569,15 +605,15 @@ class EmsModel extends Model
             $ClientDETAILS['AUTHENTICATION_START'] = $startdate;
             $ClientDETAILS['AUTHENTICATION_END'] = $expiry_date;
             /** This Will Update The Sup_tbl_all_clinet */
-            $UPDATE1 = $this->updateRecords($ClientDETAILS, 'sup_tbl_all_client', 'CLIENT_ID', $CLIENTID);
+            $UPDATE1 = updateRecords($ClientDETAILS, 'sup_tbl_all_client', 'CLIENT_ID', $CLIENTID);
             if ($UPDATE1 == 'Done') {
                 /** Update In Login Credentails Tabel sup_tbl_login_credentials */
                 $LOGINDETAILS['AUTHENTICATION_START'] = $startdate;
                 $LOGINDETAILS['AUTHENTICATION_END'] = $expiry_date;
-                $UPDATE2 = $this->updateRecords($LOGINDETAILS, 'sup_tbl_login_credential', 'CLIENTID', $CLIENTID);
+                $UPDATE2 = updateRecords($LOGINDETAILS, 'sup_tbl_login_credential', 'CLIENTID', $CLIENTID);
                 if ($UPDATE2 == 'Done') {
                     $responsemessage = 'DONE';
-                }else {
+                } else {
                     $responsemessage = 'Error3->' . $UPDATE2;
                 }
 
@@ -590,5 +626,396 @@ class EmsModel extends Model
             return 'Error1->' . $Errors;
         }
         # code...
+    }
+
+    /**
+     * savesuperadmins It will Save all records Of Superadmin To The Rquired Tabel
+     *
+     * @param  mixed $data It will Have Data That is essintail To Create
+     * @return string That Superadmin Crated Or Not.
+     */
+    public function savesuperadmins($data)
+    {
+        try {
+            $admin_name = $data['admin_name'];
+            $admin_emailid = $data['admin_emailid'];
+            $time_zone = $data['time_zone'];
+            $logo = $data['logo'];
+            $encryptuid = $data['encryptuid'];
+            $encrypt_password = $data['encrypt_password'];
+            $responsemessage = '';
+            /** Check Wether Email Id Is Prsent In The Login Table
+             * If Its Count Is Greter Then 1 Then Email Is InValid  else Email Is  Valid.
+             */
+            $loginCredentailDetails = DB::table('sup_tbl_login_credential')
+                ->where(['EMAILID' => $admin_emailid, 'FLAG' => 'Show'])->get();
+            if (count($loginCredentailDetails) == 0) {
+                $sup_client = DB::table('sup_tbl_superadmin_users')
+                    ->where(['SUPEMAILID' => $admin_emailid, 'FLAG' => 'Show'])->get();
+                if (count($sup_client) == 0) {
+                    try {
+                        /** Save Records In sup_tbl_superadmin_users */
+                        $SUPDETAILS['Name'] = $admin_name;
+                        $SUPDETAILS['SUPEMAILID'] = $admin_emailid;
+                        $SUPDETAILS['TIMEZONE'] = $time_zone;
+                        $SUPDETAILS['LOGO'] = $logo;
+                        $SUPDETAILS['UNIQUE_ID'] = $encryptuid;
+                        $SUPDETAILS['SUPPASSWORD'] = $encrypt_password;
+                        insertRecords($SUPDETAILS, 'sup_tbl_superadmin_users');
+                        $LOGINDETAILS['EMAILID'] = $admin_emailid;
+                        $LOGINDETAILS['ROLEID'] = 2;
+                        $LOGINDETAILS['TIMEZONE'] = $time_zone;
+                        $LOGINDETAILS['CLIENTID'] = 0;
+                        insertRecords($LOGINDETAILS, 'sup_tbl_login_credential');
+                        $responsemessage = 'DONE';
+                    } catch (\Exception $e) {
+                        $Errors = $e->getMessage();
+                        $responsemessage = 'Error2' . $Errors;
+                    }
+
+                } else {
+                    $responsemessage = 'EMAILPRESENT';
+                }
+            } else {
+                $responsemessage = 'EMAILPRESENT';
+            }
+            return $responsemessage;
+        } catch (\Exception $e) {
+            $Errors = $e->getMessage();
+            return 'Error';
+        }
+
+    }
+
+    /**
+     * updatesuperadmins It will update all records Of Superadmin To The Rquired Tabel
+     *
+     * @param  mixed $data It will Have Data That is essintail To update
+     * @return string That Superadmin Updated Or Not.
+     */
+    public function updatesuperadmins($data)
+    {
+        try {
+            $admin_name = $data['admin_name'];
+            $admin_emailid = $data['admin_emailid'];
+            $time_zone = $data['time_zone'];
+            $logo = $data['logo'];
+            $encryptuid = $data['encryptuid'];
+            $encrypt_password = $data['encrypt_password'];
+            $SUPUSERID = $data['SUPUSERID'];
+            $responsemessage = '';
+            /** Check Wether Email Id Is Prsent In The Login Table
+             * If Its Count Is Greter Then 1 Then Email Is InValid  else Email Is  Valid.
+             */
+            $SUPERADMINDETAILS = DB::table('sup_tbl_superadmin_users')->where(['SUPUSERID' => $SUPUSERID])->first();
+            $ADMINEMAILID = $SUPERADMINDETAILS->SUPEMAILID;
+            $sup_client = DB::table('sup_tbl_superadmin_users')
+                ->where(['SUPEMAILID' => $admin_emailid])->where(['FLAG' => 'Show'])->where('SUPUSERID', '!=', $SUPUSERID)->get();
+            if (count($sup_client) == 0) {
+                $GETLOGINCREDENTIALDETAILS = DB::table('sup_tbl_login_credential')
+                    ->where(['EMAILID' => $ADMINEMAILID, 'FLAG' => 'Show'])->first();
+                $USERID = $GETLOGINCREDENTIALDETAILS->USERID;
+                $checkdetailsofemailid = DB::table('sup_tbl_login_credential')
+                    ->where(['EMAILID' => $admin_emailid, 'FLAG' => 'Show'])->where('USERID', '!=', $USERID)->get();
+                if (count($checkdetailsofemailid) == 0) {
+                    try {
+                        /** Save Records In sup_tbl_superadmin_users */
+                        $SUPDETAILS['Name'] = $admin_name;
+                        $SUPDETAILS['SUPEMAILID'] = $admin_emailid;
+                        $SUPDETAILS['TIMEZONE'] = $time_zone;
+                        $SUPDETAILS['LOGO'] = $logo;
+                        $SUPDETAILS['UNIQUE_ID'] = $encryptuid;
+                        $SUPDETAILS['SUPPASSWORD'] = $encrypt_password;
+                        $UPDATE1 = updateRecords($SUPDETAILS, 'sup_tbl_superadmin_users', 'SUPUSERID', $SUPUSERID);
+                        if ($UPDATE1 == 'Done') {
+                            $LOGINDETAILS['EMAILID'] = $admin_emailid;
+                            $LOGINDETAILS['ROLEID'] = 2;
+                            $LOGINDETAILS['TIMEZONE'] = $time_zone;
+                            // $LOGINDETAILS['CLIENTID'] = 0;
+                            $UPDATE2 = updateRecords($LOGINDETAILS, 'sup_tbl_login_credential', 'USERID', $USERID);
+                            if ($UPDATE2 == 'Done') {
+                                $responsemessage = 'DONE';
+                            } else {
+                                return 'Error4';
+                            }
+                        } else {
+                            return 'Error3';
+                        }
+
+                    } catch (\Exception $e) {
+                        $Errors = $e->getMessage();
+                        $responsemessage = 'Error2' . $Errors;
+                    }
+                } else {
+                    $responsemessage = 'EMAILPRESENT';
+                }
+            } else {
+                $responsemessage = 'EMAILPRESENT';
+            }
+
+            return $responsemessage;
+        } catch (\Exception $e) {
+            $Errors = $e->getMessage();
+            return 'Error';
+        }
+
+    }
+
+    /**
+     * DeleteTheSUperAdmin This Will Delete The SuperAdmin.
+     *
+     * @param  mixed $SUPID This Is The SUPID Id of Which We Have To Delete The Super admin.
+     * @return string It will return with a String Wether SuperAdmin Delete Or Not.
+     */
+    public function DeleteTheSUperAdmin($SUPID)
+    {
+        try {
+            $TODAYDATE = date('Y-m-d');
+            $DECRYPTSUPID = Crypt::decrypt($SUPID);
+            /** Get Details From The Supadmin Id from sup_tbl_superadmin_users*/
+            $GETCLIENTDETAILS = DB::table('sup_tbl_superadmin_users')->where(['SUPUSERID' => $DECRYPTSUPID])->first();
+            $ADMINEMAILID = $GETCLIENTDETAILS->SUPEMAILID;
+            /** Get Details From The User Id from sup_tbl_login_credential*/
+            $GETLOGINCREDENTIALDETAILS = DB::table('sup_tbl_login_credential')
+                ->where(['EMAILID' => $ADMINEMAILID])->first();
+            $USERID = $GETLOGINCREDENTIALDETAILS->USERID;
+            /** This Is Update Function Which Will Delete All SuperAdmin Details By Updating Flag in sup_tbl_superadmin_users */
+            $DETAILS['FLAG'] = 'Delete';
+            $UPDATE1 = updateRecords($DETAILS, 'sup_tbl_superadmin_users', 'SUPUSERID', $DECRYPTSUPID);
+            if ($UPDATE1 == 'Done') {
+                /** This Is Update Function Which Will Delete All Client Details By Updating Flag in sup_tbl_login_credential */
+                $UPDATE2 = updateRecords($DETAILS, 'sup_tbl_login_credential', 'USERID', $USERID);
+                if ($UPDATE2 == 'Done') {
+                    $responsemessage = 'DONE';
+                } else {
+                    $responsemessage = 'Error3->' . $UPDATE2;
+                }
+
+            } else {
+                $responsemessage = 'Error2->' . $UPDATE1;
+            }
+            return $responsemessage;
+        } catch (\Exception $th) {
+            $Errors = $th->getMessage();
+            return 'Error1->' . $Errors;
+        }
+
+    }
+
+    /**
+     * AuthtenticateSuperadmin It Is For The Authentication Purpose of Super Admin
+     *
+     * @param  mixed $username Email By Which Superadmin Need  Need To Be Find
+     * @param  mixed $uid IT wil Be The UID of The SuperAdmin Users
+     * @return $return It Will Return that wether Super Aadmin  is Valid Or Not
+     */
+    public function AuthtenticateSuperadmin($username, $uid)
+    {
+        try {
+            $SAVELOGINREPORTS = [];
+            $where[] = ['SUPEMAILID', $username];
+            $loginCredentailDetails = $this->getservices->selectfunction('sup_tbl_superadmin_users', $where);
+            if (count($loginCredentailDetails) > 0) {
+                $UID = $loginCredentailDetails[0]->UNIQUE_ID;
+                $decryptUID = Crypt::decrypt($UID);
+                if ($uid == $decryptUID) {
+                    $databasename = Config::get('database.connections.' . Config::get('database.default'));
+                    $RoleId = 2;
+                    $USERNAME = $loginCredentailDetails[0]->USERNAME;
+                    $Name = $loginCredentailDetails[0]->Name;
+                    $SUPEMAILID = $loginCredentailDetails[0]->SUPEMAILID;
+                    $TIMEZONE = $loginCredentailDetails[0]->TIMEZONE;
+                    SetTimeZone($TIMEZONE);
+                    $TODAYDATE = date('Y-m-d');
+                    $TODAYTIME = date(' H:i:s');
+                    $LOGO = $loginCredentailDetails[0]->LOGO;
+                    $SUPUSERID = $loginCredentailDetails[0]->SUPUSERID;
+                    Session::put('RoleId', $RoleId);
+                    Session::put('USERID', $SUPUSERID);
+                    Session::put('CLIENTID', '');
+                    Session::put('USERNAME', $USERNAME);
+                    Session::put('Name', $Name);
+                    Session::put('EMAILID', $SUPEMAILID);
+                    Session::put('DATABASENAME', $databasename['database']);
+                    Session::put('LOGO', $LOGO);
+                    Session::put('TIMEZONE', $TIMEZONE);
+                    Session::put('PROFILE', '');
+
+                    $SAVELOGINREPORTS['SUP_USER_ID'] = $SUPUSERID;
+                    $SAVELOGINREPORTS['SUP_ACTION_DATE'] = $TODAYDATE;
+                    $SAVELOGINREPORTS['SUP_ACTION_TIME'] = $TODAYTIME;
+                    $SAVELOGINREPORTS['STATUS'] = 'Login';
+                    insertRecords($SAVELOGINREPORTS, 'sup_login_aduit_reports');
+                    $ENCRYPTROLEID = Crypt::encrypt($RoleId);
+                    $returnmessage = $ENCRYPTROLEID;
+                } else {
+                    $returnmessage = 'Invalid';
+                }
+            } else {
+                $returnmessage = 'NotFound';
+            }
+            return $returnmessage;
+        } catch (\Exception $e) {
+            $Errors = $e->getMessage();
+            // print_r($Errors);
+            return 'Error';
+        }
+
+    }
+
+    /**
+     * saveSingledocuments It will Check Wetehr Document Name Is Allready Exits Or Not if Not Then Addd documents And Then Check Wether is Chid Document is Enable Or Not If Yes Then Create Child DOcuments And Add That Child In Documents set Table
+     *
+     * @param  mixed $data It will Have The Details of the Documents That need To Bee Created.
+     * @return string It will Return String That Documents arre-> Created | Already | Error
+     */
+    public function saveSingledocuments($data)
+    {
+        try {
+            DB::beginTransaction();
+            $TIMESATAMP = date('Y:m:d H:i:s');
+            $USERID = Session::get('USERID');
+            $DOCUMENTNAME = $data['docname'];
+            $ISPARENTDOCMUENT = $data['isparrentdoc'];
+            $CHILDETAILS = $data['childdfilename'];
+            $DESCRIPTION = $data['description'];
+            $DOCUMENTARRY['DOCUMENT_SET_NAME'] = $DOCUMENTNAME;
+            $DOCUMENTARRY['ISPARENT_DOCUMENT'] = $ISPARENTDOCMUENT;
+            $DOCUMENTARRY['DOCUMENT_DESCRIPTION'] = $DESCRIPTION;
+            $DOCUMENTARRY['CREATED_BY'] = $USERID;
+            $DOCUMENTARRY['CREATED_DATE'] = $TIMESATAMP;
+
+            $where[] = ['DOCUMENT_SET_NAME', $DOCUMENTNAME];
+            $where[] = ['FLAG', 'Show'];
+            $message = '';
+            $document_set = $this->getservices->selectfunction('mst_tbl_document_set', $where);
+            if (count($document_set) == 0) {
+                $DOCUMENTSETID = insertRecords($DOCUMENTARRY, 'mst_tbl_document_set');
+                if ($ISPARENTDOCMUENT == 'Yes') {
+                    $CHILDIDS = [];
+                    foreach ($CHILDETAILS as $key => $value) {
+                        $where1[] = ['SUB_DOCUMENT_NAME', $value['documentname']];
+                        $where1[] = ['FLAG', 'Show'];
+                        $where1[] = ['DOCUMENT_SET_ID', $DOCUMENTSETID];
+                        $childdoc_set = $this->getservices->selectfunction('mst_tbl_child_doc_details', $where1);
+                        if (count($childdoc_set) == 0) {
+                            $CHILDDOCUMENTAARY['SUB_DOCUMENT_NAME'] = $value['documentname'];
+                            $CHILDDOCUMENTAARY['SUB_DOCUMENT_DESCRIPTION'] = $value['description'];
+                            $CHILDDOCUMENTAARY['DOCUMENT_SET_ID'] = $DOCUMENTSETID;
+                            $CHILDDOCUMENTAARY['CREATED_AT'] = $TIMESATAMP;
+                            $CHILDDOCUMENTAARY['CREATED_BY'] = $USERID;
+                            $CHILDIDS[] = insertRecords($CHILDDOCUMENTAARY, 'mst_tbl_child_doc_details');
+                            $CHILDDOCUMENTAARY = [];
+                        } else {
+                            continue;
+                        }
+                    }
+                    if (count($CHILDIDS) > 0) {
+                        $IMPLODEIDS = implode(',', $CHILDIDS);
+                        $UPDATEDRECORDS['CHILD_DOCUMENT_ID'] = $IMPLODEIDS;
+                    } else {
+                        $UPDATEDRECORDS['ISPARENT_DOCUMENT'] = 'No';
+                    }
+                    updateRecords($UPDATEDRECORDS, 'mst_tbl_document_set', 'ID', $DOCUMENTSETID);
+                }
+                DB::commit();
+                $message = 'Done';
+            } else {
+                $message = 'Already';
+            }
+        } catch (\Exception $th) {
+            DB::rollback();
+            $message = 'Error';
+        }
+
+        return $message;
+    }
+
+    /**
+     * updateDocumntsList It will Check Wetehr Document Name Is Allready Exits Or Not if Not Then Addd documents And Then Check Wether is Chid Document is Enable Or Not If Yes Then Create Child DOcuments And Add That Child In Documents set Table
+     *
+     * @param  mixed $data It will Have The Details of the Documents That need To Bee Created.
+     * @return string It will Return String That Documents arre-> Created | Already | Error
+     */
+    public function updateDocumntsList($data)
+    {
+        try {
+            DB::beginTransaction();
+            $TIMESATAMP = date('Y:m:d H:i:s');
+            $USERID = Session::get('USERID');
+            $DOCUMENTNAME = $data['docname'];
+            $ISPARENTDOCMUENT = $data['isparrentdoc'];
+            $CHILDETAILS = $data['childdfilename'];
+            $DESCRIPTION = $data['description'];
+            $DOCID = $data['documentID'];
+            if ($DOCUMENTNAME != '') {
+                $DOCUMENTARRY['DOCUMENT_SET_NAME'] = $DOCUMENTNAME;
+            }
+            if ($DESCRIPTION != '') {
+                $DOCUMENTARRY['DOCUMENT_DESCRIPTION'] = $DESCRIPTION;
+            }
+            $DOCUMENTARRY['ISPARENT_DOCUMENT'] = $ISPARENTDOCMUENT;
+            $DOCUMENTARRY['UPDATED_BY'] = $USERID;
+            $DOCUMENTARRY['UPDATED_TIME'] = $TIMESATAMP;
+            $message = '';
+            if ($DOCUMENTNAME != '') {
+                $document_set = DB::table('mst_tbl_document_set')->where(['DOCUMENT_SET_NAME' => $DOCUMENTNAME, 'FLAG' => 'Show'])->where('ID', '!=', $DOCID)->get();
+            } else {
+                $document_set = [];
+            }
+            if (count($document_set) == 0) {
+                $DOCUMENTSETID = updateRecords($DOCUMENTARRY, 'mst_tbl_document_set', 'ID', $DOCID);
+                if ($DOCUMENTSETID == 'Done') {
+                    if ($ISPARENTDOCMUENT == 'Yes') {
+                        $where2[] = ['DOCUMENT_SET_ID', $DOCID];
+                        $oldfiles_set = $this->getservices->selectfunction('mst_tbl_child_doc_details', $where2);
+                        foreach ($oldfiles_set as $key => $value) {
+                            // print_r($value);
+                            $CHILD_DOCUMENT_ID = $value->CHILD_DOC_ID;
+                            // print_r($CHILD_DOCUMENT_ID);
+                            DB::table('mst_tbl_child_doc_details')->where('CHILD_DOC_ID', $CHILD_DOCUMENT_ID)->delete();
+                        }
+                        $CHILDIDS = [];
+                        foreach ($CHILDETAILS as $key => $value) {
+                            $where1[] = ['SUB_DOCUMENT_NAME', $value['documentname']];
+                            $where1[] = ['FLAG', 'Show'];
+                            $where1[] = ['DOCUMENT_SET_ID', $DOCID];
+                            $childdoc_set = $this->getservices->selectfunction('mst_tbl_child_doc_details', $where1);
+                            if (count($childdoc_set) == 0) {
+                                $CHILDDOCUMENTAARY['SUB_DOCUMENT_NAME'] = $value['documentname'];
+                                $CHILDDOCUMENTAARY['SUB_DOCUMENT_DESCRIPTION'] = $value['description'];
+                                $CHILDDOCUMENTAARY['DOCUMENT_SET_ID'] = $DOCID;
+                                $CHILDDOCUMENTAARY['CREATED_AT'] = $TIMESATAMP;
+                                $CHILDDOCUMENTAARY['CREATED_BY'] = $USERID;
+                                $CHILDIDS[] = insertRecords($CHILDDOCUMENTAARY, 'mst_tbl_child_doc_details');
+                                $CHILDDOCUMENTAARY = [];
+                            } else {
+                                continue;
+                            }
+                        }
+                        if (count($CHILDIDS) > 0) {
+                            $IMPLODEIDS = implode(',', $CHILDIDS);
+                            $UPDATEDRECORDS['CHILD_DOCUMENT_ID'] = $IMPLODEIDS;
+                        } else {
+                            $UPDATEDRECORDS['ISPARENT_DOCUMENT'] = 'No';
+                        }
+                        updateRecords($UPDATEDRECORDS, 'mst_tbl_document_set', 'ID', $DOCID);
+                    }
+                    DB::commit();
+                    $message = 'Done';
+                } else {
+                    DB::rollback();
+                    $message = 'Error';
+                }
+            } else {
+                $message = 'Already';
+            }
+        } catch (\Exception $th) {
+            DB::rollback();
+            print_r($th->getMessage());
+            $message = 'Errossr';
+        }
+
+        return $message;
     }
 }

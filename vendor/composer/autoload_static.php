@@ -35,6 +35,7 @@ class ComposerStaticInit86cb40c7be05361ff006579ddec02278
         '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
         'b6b991a57620e2fb6b2f66f03fe9ddc2' => __DIR__ . '/..' . '/symfony/string/Resources/functions.php',
         '0b47d6d4a00ca9112ba3953b49e7c9a4' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/helper.php',
+        '559dba61bcaafa74db6aa5e7e8759117' => __DIR__ . '/../..' . '/app/Http/Helpers.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -510,10 +511,12 @@ class ComposerStaticInit86cb40c7be05361ff006579ddec02278
         'App\\Http\\Controllers\\User\\UserController' => __DIR__ . '/../..' . '/app/Http/Controllers/User/UserController.php',
         'App\\Http\\Kernel' => __DIR__ . '/../..' . '/app/Http/Kernel.php',
         'App\\Http\\Middleware\\Admin\\AdminMiddleware' => __DIR__ . '/../..' . '/app/Http/Middleware/Admin/AdminMiddleware.php',
+        'App\\Http\\Middleware\\AuthencationMiddleware' => __DIR__ . '/../..' . '/app/Http/Middleware/AuthencationMiddleware.php',
         'App\\Http\\Middleware\\Authenticate' => __DIR__ . '/../..' . '/app/Http/Middleware/Authenticate.php',
         'App\\Http\\Middleware\\CheckForMaintenanceMode' => __DIR__ . '/../..' . '/app/Http/Middleware/CheckForMaintenanceMode.php',
         'App\\Http\\Middleware\\CommanM\\CommanMiddleware' => __DIR__ . '/../..' . '/app/Http/Middleware/CommanM/CommanMiddleware.php',
         'App\\Http\\Middleware\\EncryptCookies' => __DIR__ . '/../..' . '/app/Http/Middleware/EncryptCookies.php',
+        'App\\Http\\Middleware\\MainsuperadminMiddleware' => __DIR__ . '/../..' . '/app/Http/Middleware/MainsuperadminMiddleware.php',
         'App\\Http\\Middleware\\RedirectIfAuthenticated' => __DIR__ . '/../..' . '/app/Http/Middleware/RedirectIfAuthenticated.php',
         'App\\Http\\Middleware\\SuperAdmin\\SuperAdminMiddleware' => __DIR__ . '/../..' . '/app/Http/Middleware/SuperAdmin/SuperAdminMiddleware.php',
         'App\\Http\\Middleware\\TrimStrings' => __DIR__ . '/../..' . '/app/Http/Middleware/TrimStrings.php',

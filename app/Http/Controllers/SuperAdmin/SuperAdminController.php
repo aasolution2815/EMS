@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Yajra\DataTables\Facades\DataTables;
 
 class SuperAdminController extends Controller
@@ -57,7 +59,12 @@ class SuperAdminController extends Controller
         } else {
             $images = '';
         }
-        return view('SuperAdmin.client-creation', compact('images'));
+        $ALLTIMEZONE = $this->getservices->getAllTimezone();
+        $LOCATION = DB::table('mst_tbl_countries')->get();
+        // $CONEVRTINARRY = explode(' ', $ALLTIMEZONE);
+        // echo "<pre>";
+        // print_r($LOCATION);
+        return view('SuperAdmin.client-creation', compact('images', 'ALLTIMEZONE', 'LOCATION'));
     }
 
     /**
@@ -83,6 +90,9 @@ class SuperAdminController extends Controller
         $startdate = $request->startdate;
         $expiry_date = $request->expiry_date;
         $logo = $request->logo;
+        $website = $request->website;
+        $time_zone = $request->time_zone;
+        $locaton = $request->locaton;
         $getSessionDatabseName = Session::get('DATABASENAME');
         $timestamp = date('Y-m-d H:i:s');
         $encryptStartDate = Crypt::encrypt($startdate);
@@ -103,6 +113,10 @@ class SuperAdminController extends Controller
         $data['CREATED_AT'] = $timestamp;
         $data['DATABASENAME'] = $getSessionDatabseName;
         $data['COMPANYLOGO'] = $logo;
+
+        $data['LOCATION'] = $locaton;
+        $data['WEBSITE'] = $website;
+        $data['TIMEZONE'] = $time_zone;
         $response = $emsmodel->saveClient($data);
         return $response;
     }
@@ -237,15 +251,18 @@ class SuperAdminController extends Controller
     {
         $DECRYPT_CLIENTID = Crypt::decrypt($id);
         $GETDETAILS = DB::table('sup_tbl_all_client')->where(['CLIENT_ID' => $DECRYPT_CLIENTID])->first();
+
         $AUTHENTICATION_START = $GETDETAILS->AUTHENTICATION_START;
         $AUTHENTICATION_END = $GETDETAILS->AUTHENTICATION_END;
         $ADMINEMAILID = $GETDETAILS->ADMINEMAILID;
         $CLIENTPREFIX = $GETDETAILS->CLIENTPREFIX;
+        $LOCATION = DB::table('mst_tbl_countries')->get();
         $CLIENTDATABASENAME = $CLIENTPREFIX . '_management';
-        $this->getservices->Setthedatabase($CLIENTDATABASENAME);
+        DB::disconnect('dynamicsql');
+        Setthedatabase($CLIENTDATABASENAME);
         $GETUSERDETAILS = DB::table('mst_tbl_users')->where(['EMAILID' => $ADMINEMAILID])->first();
         $getSessionDatabseName = Session::get('DATABASENAME');
-        $this->getservices->Setthedatabase($getSessionDatabseName);
+        // $this->getservices->Setthedatabase($getSessionDatabseName);
         $PASSWORDS = $GETUSERDETAILS->PASSWORDS;
         $DECRYPT_PASSWORDS = Crypt::decrypt($PASSWORDS);
         $DECRYPT_AUTHENTICATION_START = Crypt::decrypt($AUTHENTICATION_START);
@@ -254,8 +271,11 @@ class SuperAdminController extends Controller
         $GETDETAILS->AUTHENTICATION_END = $DECRYPT_AUTHENTICATION_END;
         $GETDETAILS->PASSWORDS = $DECRYPT_PASSWORDS;
         $todaysData = date('Y-m-d');
+        DB::disconnect('dynamicsql');
+        Setthedatabase($getSessionDatabseName);
         $SERVICETIME = $this->getservices->checkpastDate($DECRYPT_AUTHENTICATION_START, $todaysData);
-        return view('SuperAdmin.edit-client-creation', compact('SERVICETIME', 'GETDETAILS', 'id'));
+        $ALLTIMEZONE = $this->getservices->getAllTimezone();
+        return view('SuperAdmin.edit-client-creation', compact('SERVICETIME', 'GETDETAILS', 'id', 'ALLTIMEZONE', 'LOCATION'));
     }
 
     /**
@@ -281,6 +301,9 @@ class SuperAdminController extends Controller
         $startdate = $request->startdate;
         $expiry_date = $request->expiry_date;
         $logo = $request->logo;
+        $website = $request->website;
+        $time_zone = $request->time_zone;
+        $locaton = $request->locaton;
         $getSessionDatabseName = Session::get('DATABASENAME');
         $timestamp = date('Y-m-d H:i:s');
         $encryptStartDate = Crypt::encrypt($startdate);
@@ -302,6 +325,9 @@ class SuperAdminController extends Controller
         $data['UPDATED_AT'] = $timestamp;
         $data['DATABASENAME'] = $getSessionDatabseName;
         $data['COMPANYLOGO'] = $logo;
+        $data['LOCATION'] = $locaton;
+        $data['WEBSITE'] = $website;
+        $data['TIMEZONE'] = $time_zone;
         $response = $emsmodel->UpdateClient($data);
         return $response;
     }
@@ -409,7 +435,7 @@ class SuperAdminController extends Controller
             $data['MODULELINK'] = $module_url;
             $data['CATEGORY_ID'] = $module_cat;
             $data['MODULEDESCRIPTION'] = $module_description;
-            $saverecord = $saveModules->insertRecords($data, 'sup_tbl_module');
+            $saverecord = insertRecords($data, 'sup_tbl_module');
             if ($saverecord > 0) {
                 $response = 'DONE';
             } else {
@@ -433,7 +459,7 @@ class SuperAdminController extends Controller
         $moduleId = $request->moduleId;
         $DECRYPT_MODULEId = Crypt::decrypt($moduleId);
         $DELETEMODULE['Flag'] = 'Deleted';
-        $DELETRECORDS = $deleteModules->updateRecords($DELETEMODULE, 'sup_tbl_module', 'MODULEID', $DECRYPT_MODULEId);
+        $DELETRECORDS = updateRecords($DELETEMODULE, 'sup_tbl_module', 'MODULEID', $DECRYPT_MODULEId);
         if ($DELETRECORDS == 'Done') {
             $response = 'DONE';
         } else {;
@@ -654,7 +680,6 @@ class SuperAdminController extends Controller
                         $ASIGNMODULEDATA['Flag'] = 'Show';
                         $ASIGNMODULEDATAARRY[] = $ASIGNMODULEDATA;
 
-
                         $MODULESDETAILS = DB::table('sup_tbl_module')->where(['FLAG' => 'Show', 'MODULEID' => $MODID])->get();
                         if (count($MODULESDETAILS) > 0) {
                             $MODULENAME = $MODULESDETAILS[0]->MODULENAME;
@@ -694,11 +719,11 @@ class SuperAdminController extends Controller
                             if (count($ASSGINEDDETAILS) > 0) {
                                 /** Update sup_tbl_assigned_module Data of Module Id */
                                 $ASSIGNEDID = $ASSGINEDDETAILS[0]->ASSGINMODULEID;
-                                $ASSGINMODEL->updateRecords($ASIGNMODULEDATAARRY[$as], 'sup_tbl_assigned_module', 'ASSGINMODULEID', $ASSIGNEDID);
+                                updateRecords($ASIGNMODULEDATAARRY[$as], 'sup_tbl_assigned_module', 'ASSGINMODULEID', $ASSIGNEDID);
                                 $UPDATEDASSINEDID = $ASSIGNEDID;
                             } else {
                                 /** Insert New Records In  sup_tbl_assigned_module*/
-                                $UPDATEDASSINEDID = $ASSGINMODEL->insertRecords($ASIGNMODULEDATAARRY[$as], 'sup_tbl_assigned_module');
+                                $UPDATEDASSINEDID = insertRecords($ASIGNMODULEDATAARRY[$as], 'sup_tbl_assigned_module');
                             }
                             $ASSIGNEDARRY[] = $UPDATEDASSINEDID; // Save All Id In One AARAY And Update The ASSIGNEDMODULE in sup_tbl_all_client
                         }
@@ -707,12 +732,12 @@ class SuperAdminController extends Controller
 
                             /** Assgin All  Assgined Module Id To Client  */
                             $CLIDETUPDATEDATA['ASSIGNEDMODULE'] = $IMPLODEDATA;
-                            $ASSGINMODEL->updateRecords($CLIDETUPDATEDATA, 'sup_tbl_all_client', 'CLIENT_ID', $CLIENTID);
+                            updateRecords($CLIDETUPDATEDATA, 'sup_tbl_all_client', 'CLIENT_ID', $CLIENTID);
                             $FLAGDAT['Flag'] = 'Delete';
-                            $ASSGINMODEL->multiUpdateRecords($FLAGDAT, 'sup_tbl_assigned_module', 'ASSGINMODULEID', $ASSIGNEDARRY, 'whereNotIn');
+                            multiUpdateRecords($FLAGDAT, 'sup_tbl_assigned_module', 'ASSGINMODULEID', $ASSIGNEDARRY, 'whereNotIn');
                             if (count($MODULEDATAARRY) > 0) {
-
-                                $this->getservices->Setthedatabase($DATABSENAME);
+                                Setthedatabase($DATABSENAME);
+                                // $this->getservices->Setthedatabase($DATABSENAME);
 
                                 for ($mo = 0; $mo < count($MODULEDATAARRY); $mo++) {
                                     $GETCLIENTMODID = $MODULEDATAARRY[$mo]['CLIENT_MODULE_ID'];
@@ -721,16 +746,16 @@ class SuperAdminController extends Controller
                                     if (count($ASSGINEDMODULEDETAILS) > 0) {
                                         /** Update mst_tbl_module  */
                                         $CLIENT_MODULE_ID = $ASSGINEDMODULEDETAILS[0]->CLIENT_MODULE_ID;
-                                        $ASSGINMODEL->updateRecords($MODULEDATAARRY[$mo], 'mst_tbl_module', 'CLIENT_MODULE_ID', $CLIENT_MODULE_ID);
+                                        updateRecords($MODULEDATAARRY[$mo], 'mst_tbl_module', 'CLIENT_MODULE_ID', $CLIENT_MODULE_ID);
                                         $UPDATEDASSINEDMODULEID = $CLIENT_MODULE_ID;
                                     } else {
-                                         /** Insert mst_tbl_module  */
-                                        $UPDATEDASSINEDMODULEID =$ASSGINMODEL->insertRecords($MODULEDATAARRY[$mo], 'mst_tbl_module');
+                                        /** Insert mst_tbl_module  */
+                                        $UPDATEDASSINEDMODULEID =insertRecords($MODULEDATAARRY[$mo], 'mst_tbl_module');
                                     }
                                     $ALLASSIGNEDMODUELEARRY[] = $UPDATEDASSINEDMODULEID; // Save All Id In One AARAY
                                 }
                                 $DATADONE['Flag'] = 'Delete';
-                                $ASSGINMODEL->multiUpdateRecords($DATADONE, 'mst_tbl_module', 'CLIENT_MODULE_ID', $ALLASSIGNEDMODUELEARRY, 'whereNotIn');
+                                multiUpdateRecords($DATADONE, 'mst_tbl_module', 'CLIENT_MODULE_ID', $ALLASSIGNEDMODUELEARRY, 'whereNotIn');
                                 $message = 'Update';
                             } else {
                                 $message = 'Empty';
@@ -745,17 +770,18 @@ class SuperAdminController extends Controller
                     /** Save The Records into sup_tbl_assigned_module  For Client */
                     if (count($ASIGNMODULEDATAARRY) > 0) {
                         for ($cl = 0; $cl < count($ASIGNMODULEDATAARRY); $cl++) {
-                            $ASSIGNEDARRY[] = $ASSGINMODEL->insertRecords($ASIGNMODULEDATAARRY[$cl], 'sup_tbl_assigned_module');
+                            $ASSIGNEDARRY[] = insertRecords($ASIGNMODULEDATAARRY[$cl], 'sup_tbl_assigned_module');
                         }
                         if (count($ASSIGNEDARRY) > 0) {
                             $IMPLODEDATA = implode(',', $ASSIGNEDARRY);
                             /** Assgin All  Assgined Module Id To Client  */
                             $CLIDETUPDATEDATA['ASSIGNEDMODULE'] = $IMPLODEDATA;
-                            $ASSGINMODEL->updateRecords($CLIDETUPDATEDATA, 'sup_tbl_all_client', 'CLIENT_ID', $CLIENTID);
+                            updateRecords($CLIDETUPDATEDATA, 'sup_tbl_all_client', 'CLIENT_ID', $CLIENTID);
                             if (count($MODULEDATAARRY) > 0) {
-                                $this->getservices->Setthedatabase($DATABSENAME);
+                                Setthedatabase($DATABSENAME);
+                                // $this->getservices->Setthedatabase($DATABSENAME);
                                 for ($mo = 0; $mo < count($MODULEDATAARRY); $mo++) {
-                                    $ASSGINMODEL->insertRecords($MODULEDATAARRY[$mo], 'mst_tbl_module');
+                                    insertRecords($MODULEDATAARRY[$mo], 'mst_tbl_module');
                                 }
                                 $message = 'Done';
                             } else {
@@ -777,6 +803,208 @@ class SuperAdminController extends Controller
         }
         return $message;
 
+    }
+
+    /**
+     * Superadmincreation It will give you Balde Page of superadmin-creation that is used for the Superadmin creation
+     *
+     * @return view It will view of superadmin-creation;
+     */
+    public function Superadmincreation()
+    {
+        $getallDeualtImage = DB::table('mst_tbl_all_defualtimages')->where(['FLAG' => 'Show'])->get();
+        if (count($getallDeualtImage) > 0) {
+            $images = $getallDeualtImage[0]->COMPNAYLOGO;
+        } else {
+            $images = '';
+        }
+        $ALLTIMEZONE = $this->getservices->getAllTimezone();
+        return view('SuperAdmin.superadmin-creation', compact('images', 'ALLTIMEZONE'));
+    }
+
+    /**
+     * saveSuperAdminCreation is To Save Details Of superadmin Details.
+     *
+     * @param  mixed $request Parmeter Reuired to Create Superadmin
+     * @return string It will Return String That Superadmin is Created or Not
+     */
+    public function saveSuperAdminCreation(Request $request)
+    {
+        $emsmodel = new EmsModel();
+        $admin_name = $request->admin_name;
+        $admin_emailid = $request->admin_emailid;
+        $user_password = $request->user_password;
+        $time_zone = $request->time_zone;
+        $uid = $request->uid;
+        // $uid = '123456789ankit';
+        $logo = $request->logo;
+        $validator = Validator::make($request->all(), ['admin_name' => 'required', 'user_password' => 'required', 'time_zone' => 'required', 'uid' => 'required', 'logo' => 'required']);
+        if ($validator->fails()) {
+            return 'Require';
+        } else {
+            $checkemails = Validator::make($request->all(), ['admin_emailid' => 'email']);
+            if ($checkemails->fails()) {
+                return 'Invalidemail';
+            } else {
+                // $pattern = "/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*([@#_-])).{6,}+$/";
+                $pattern = "/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*([@#_-])).{6,}+$/";
+                if (preg_match($pattern, $user_password)) {
+                    $pattern2 = "/^[A-Za-z0-9-]{14}$/";
+                    if (preg_match($pattern2, $uid)) {
+                        // return 'DONE';
+                        // $timestamp = date('Y-m-d H:i:s');
+                        $encryptuid = Crypt::encrypt($uid);
+                        $encrypt_password = Crypt::encrypt($user_password);
+                        $data['admin_name'] = $admin_name;
+                        $data['admin_emailid'] = $admin_emailid;
+                        $data['time_zone'] = $time_zone;
+                        $data['logo'] = $logo;
+                        $data['encryptuid'] = $encryptuid;
+                        $data['encrypt_password'] = $encrypt_password;
+                        $response = $emsmodel->savesuperadmins($data);
+                        return $response;
+                    } else {
+                        return 'Invaliduid';
+                    }
+
+                } else {
+                    return 'Invalidpass';
+                }
+            }
+
+        }
+
+    }
+
+    public function showallSuperAdmin()
+    {
+        return view('SuperAdmin.show-all-superadmins');
+    }
+
+    /**
+     * getallSuperadmin This Function is For Geting Superadmin  Data In Datatabel.
+     *
+     * @param  mixed $request It is Having Type of Request Which Request To be Excute.
+     * @return Datatables  It Will Retrun The Datatabel.
+     */
+    public function getallSuperadmin(Request $request)
+    {
+        $data = DB::table('sup_tbl_superadmin_users')->where('SUPUSERID', '!=', '1')->where(['FLAG' => 'Show'])->get();
+        return Datatables::of($data)
+            ->addIndexColumn()
+            ->addColumn('action', function ($row) {
+                $SUPUSERID = $row->SUPUSERID;
+                $ENCRYPT_SUPUSERID = Crypt::encrypt($SUPUSERID);
+                $LINK = url('/SuperAdmin/edit-superadmins/' . $ENCRYPT_SUPUSERID);
+                $actionBtn = '<a href=' . "$LINK" . '><i class="feather icon-edit-2 mid_icon"></i></a> <a href="javascript:void(0)" onclick="deleteClient(' . "'$ENCRYPT_SUPUSERID'" . ',event)" ><i class="feather icon-trash mid_icon"></i></a>';
+                // print_r($TYPEOFREQUEST);
+                return $actionBtn;
+            })
+            ->addColumn('LOGO', function ($row) {
+                $src = $row->LOGO;
+                $LOGO = '<img src="' . $src . '" alt="Avatar" class="avatar">';
+                return $LOGO;
+            })
+            ->rawColumns(['action', 'LOGO'])
+            ->make(true);
+
+    }
+
+    /**
+     * Display the Edit Form Of Superadmin Creation.
+     *
+     * @param  int  $id It is a Encrypt Id of Superadmin Creation.
+     * @return \Illuminate\Http\Response It will Return The View Page For Edit Page Of Superadmin Creation.
+     */
+    public function showEditSuperadminForm($id)
+    {
+        $DECRYPT_SUPERADMIN = Crypt::decrypt($id);
+        $getallDeualtImage = DB::table('mst_tbl_all_defualtimages')->where(['FLAG' => 'Show'])->get();
+        if (count($getallDeualtImage) > 0) {
+            $images = $getallDeualtImage[0]->COMPNAYLOGO;
+        } else {
+            $images = '';
+        }
+        $ALLTIMEZONE = $this->getservices->getAllTimezone();
+        $SUPERADMINDETAILS = DB::table('sup_tbl_superadmin_users')->where(['SUPUSERID' => $DECRYPT_SUPERADMIN])->first();
+        $PASSWORD = $SUPERADMINDETAILS->SUPPASSWORD;
+        $DECRYPTPASS = Crypt::decrypt($PASSWORD);
+        $SUPERADMINDETAILS->DECRYPTPASS = $DECRYPTPASS;
+        $UNIQUE_ID = $SUPERADMINDETAILS->UNIQUE_ID;
+        $DECRYPTPASS_UNIQUE_ID = Crypt::decrypt($UNIQUE_ID);
+        $SUPERADMINDETAILS->DECRYPTPASS_UNIQUE_ID = $DECRYPTPASS_UNIQUE_ID;
+        return view('SuperAdmin.superadmin-edit-creation', compact('images', 'ALLTIMEZONE', 'SUPERADMINDETAILS','id'));
+    }
+
+    /**
+     * updateSuperAdminCreation is To Update Details Of superadmin Details.
+     *
+     * @param  mixed $request Parmeter Reuired to Update Superadmin
+     * @return string It will Return String That Superadmin is Updated or Not
+     */
+    public function updateSuperAdminCreation(Request $request)
+    {
+        $emsmodel = new EmsModel();
+        $admin_name = $request->admin_name;
+        $admin_emailid = $request->admin_emailid;
+        $user_password = $request->user_password;
+        $time_zone = $request->time_zone;
+        $uid = $request->uid;
+        $id = $request->id;
+        $decryptid = Crypt::decrypt($id);
+        // $uid = '123456789ankit';
+        $logo = $request->logo;
+        $validator = Validator::make($request->all(), ['admin_name' => 'required', 'user_password' => 'required', 'time_zone' => 'required', 'uid' => 'required', 'logo' => 'required']);
+        if ($validator->fails()) {
+            return 'Require';
+        } else {
+            $checkemails = Validator::make($request->all(), ['admin_emailid' => 'email']);
+            if ($checkemails->fails()) {
+                return 'Invalidemail';
+            } else {
+                // $pattern = "/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*([@#_-])).{6,}+$/";
+                $pattern = "/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*([@#_-])).{6,}+$/";
+                if (preg_match($pattern, $user_password)) {
+                    $pattern2 = "/^[A-Za-z0-9-]{14}$/";
+                    if (preg_match($pattern2, $uid)) {
+                        // return 'DONE';
+                        // $timestamp = date('Y-m-d H:i:s');
+                        $encryptuid = Crypt::encrypt($uid);
+                        $encrypt_password = Crypt::encrypt($user_password);
+                        $data['admin_name'] = $admin_name;
+                        $data['admin_emailid'] = $admin_emailid;
+                        $data['time_zone'] = $time_zone;
+                        $data['logo'] = $logo;
+                        $data['encryptuid'] = $encryptuid;
+                        $data['encrypt_password'] = $encrypt_password;
+                        $data['SUPUSERID'] = $decryptid;
+                        $response = $emsmodel->updatesuperadmins($data);
+                        return $response;
+                    } else {
+                        return 'Invaliduid';
+                    }
+
+                } else {
+                    return 'Invalidpass';
+                }
+            }
+
+        }
+
+    }
+
+    /**
+     * deleteSuperAdmin THis Is To Delete The SuperAdmin.
+     *
+     * @param  mixed $request It Is Having SuperAdmin ID
+     * @return string It WIll return That Wether SuperAdmin Deletd Or Not.
+     */
+    public function deleteSuperAdmin(Request $request)
+    {
+        $CLIENTID = $request->clientid;
+        $deleteclients = new EmsModel();
+        $response = $deleteclients->DeleteTheSUperAdmin($CLIENTID);
+        return $response;
     }
 
 }
