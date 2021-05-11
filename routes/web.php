@@ -167,6 +167,10 @@ Route::group(['middleware' => ['athuthenticate']], function () {
         // SuperAdmin Update Doc Configration  Data
         Route::post('/update-docconfigration', 'CommonController@updateDocuments')->name('/update-docconfigration');
 
+        Route::get('/email-setings', 'CommonController@emailSettings')->name('/email-setings');
+
+        Route::post('/save-emailconfigration', 'CommonController@saveEmailConfigration')->name('/save-emailconfigration');
+
         /** Common Controller End Here */
     });
 

@@ -375,6 +375,12 @@ class CommonController extends Controller
 
     }
 
+    /**
+     * updateDocuments It will Check Wether Parnet Child Mode is Enbale and if Yes Then It should Have One Documents and If Condition staisfy then it call updateDocumntsList function
+     *
+     * @param  mixed $request All Parameteres Docname, Description, Autoid, And Child Documents
+     * @return string It will Return The String Document is Updated, Child Document is Mandtory if Enbale ParentChild Mode and response from updateDocumntsList
+     */
     public function updateDocuments(Request $request)
     {
 
@@ -406,5 +412,20 @@ class CommonController extends Controller
             }
 
         return $ressponse;
+    }
+
+    public function emailSettings()
+    {
+        return view('Comman.email-settings');
+    }
+
+    public function saveEmailConfigration(Request $request)
+    {
+        $EMAILID = $request->emai_id;
+        $INCOMMINGSERVER = $request->email_incomming_server;
+        $OUTGOINGSERVER = $request->email_out_server;
+        $PORT = $request->email_port;
+        $PASSWORD = $request->email_password;
+        print_r($PASSWORD);
     }
 }

@@ -932,10 +932,10 @@ class EmsModel extends Model
     }
 
     /**
-     * updateDocumntsList It will Check Wetehr Document Name Is Allready Exits Or Not if Not Then Addd documents And Then Check Wether is Chid Document is Enable Or Not If Yes Then Create Child DOcuments And Add That Child In Documents set Table
+     * updateDocumntsList It Will First Check Wether Doc Name is Already Exits or Not If Not Then It Will Update The Document Set And Then Check ParentChild Mode If Yes Then It Will Delete Old File And Insert New And Updated The Child Documents Id In The Doc Tabel.
      *
-     * @param  mixed $data It will Have The Details of the Documents That need To Bee Created.
-     * @return string It will Return String That Documents arre-> Created | Already | Error
+     * @param  mixed $data It will have Doc ID, Child Documents, ParentChild Mode, Document Mode, Descriptions
+     * @return string It will return Error | Done| Already
      */
     public function updateDocumntsList($data)
     {
@@ -1018,4 +1018,7 @@ class EmsModel extends Model
 
         return $message;
     }
+
+
+
 }
